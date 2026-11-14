@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pellicule</string>
+
+    <string name="flash_off">Sans flash</string>
+    <string name="flash_on">Flash</string>
+    <string name="flash_auto">Flash auto</string>
+    <string name="timer_off">Minuteur</string>
+    <string name="timer_3">3 s</string>
+    <string name="timer_10">10 s</string>
+    <string name="vignette">Vignette</string>
+    <string name="grain">Grain</string>
+    <string name="random">Hasard</string>
+    <string name="blur_off">Flou</string>
+    <string name="blur_radial">Flou rond</string>
+    <string name="blur_band">Flou bande</string>
+    <string name="blur_hint">Touche l’image : zone nette</string>
+    <string name="blur_light">Léger</string>
+    <string name="blur_strong">Fort</string>
+    <string name="cd_blur_strength">Intensité du flou</string>
+    <string name="blur_unavailable">Le flou en direct n’est pas disponible sur ce téléphone.</string>
+
+    <string name="permission_message">Pellicule a besoin de la caméra pour prendre des photos.</string>
+    <string name="permission_button">Autoriser la caméra</string>
+
+    <string name="camera_error">Impossible d’ouvrir la caméra.</string>
+    <string name="capture_error">La photo n’a pas pu être prise. Réessaie.</string>
+    <string name="save_error">Impossible d’enregistrer la photo dans la galerie.</string>
+    <string name="no_gallery">Aucune application de galerie trouvée.</string>
+    <string name="nothing_to_share">Prends d’abord une photo.</string>
+    <string name="no_share_app">Aucune application pour partager.</string>
+    <string name="share">Partager la photo</string>
+
+    <string name="cd_shutter">Prendre la photo</string>
+    <string name="cd_switch">Changer de caméra</string>
+    <string name="cd_gallery">Voir la dernière photo. Appui long pour partager.</string>
+    <string name="cd_filter">Filtre %1$s</string>
+    <string name="format">Format</string>
+    <string name="cd_format">Format de la photo : %1$s</string>
+</resources>

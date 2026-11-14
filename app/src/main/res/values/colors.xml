@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Noir chaud de chambre noire, blanc papier, or de boîte de pellicule -->
+    <color name="bg">#FF0F0E0D</color>
+    <color name="surface">#FF1D1B19</color>
+    <color name="ink">#FFF4EFE7</color>
+    <color name="ink_dim">#FF9E988F</color>
+    <color name="accent">#FFE8C07A</color>
+    <color name="icon_bg">#FF2A231E</color>
+</resources>

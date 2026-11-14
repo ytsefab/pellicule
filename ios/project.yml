@@ -1,0 +1,43 @@
+name: Pellicule
+options:
+  bundleIdPrefix: com.pellicule
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Pellicule:
+    type: application
+    platform: iOS
+    sources:
+      - Pellicule
+    info:
+      path: Pellicule/Info.plist
+      properties:
+        CFBundleDisplayName: Pellicule
+        CFBundleDevelopmentRegion: fr
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UIViewControllerBasedStatusBarAppearance: true
+        NSCameraUsageDescription: Pellicule a besoin de la caméra pour prendre des photos.
+        NSPhotoLibraryAddUsageDescription: Pellicule enregistre tes photos dans ta galerie.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ytsefab.pellicule
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO

@@ -1,0 +1,4 @@
+build/
+Pellicule.xcodeproj/
+*.ipa
+build-signed/
