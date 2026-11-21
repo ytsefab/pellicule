@@ -19,11 +19,6 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
     private let defaults = UserDefaults.standard
     private let photoQueue = DispatchQueue(label: "pellicule.photo", qos: .userInitiated)
     private let thumbQueue = DispatchQueue(label: "pellicule.thumbs", qos: .utility)
-    private let aiQueue = DispatchQueue(label: "pellicule.ai.scene", qos: .userInitiated)
-    private let subjects = SubjectTracker()
-    private let frameLock = NSLock()
-    private var latestFrame: CIImage?
-    private var aiBusy = false
 
     // Réglages (mémorisés)
     private var current = 0
@@ -405,15 +400,6 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
         random.addTarget(self, action: #selector(pickRandomFilter), for: .touchUpInside)
         filterStrip.addArrangedSubview(random)
 
-        let smart = FilterChip(title: "IA")
-        smart.accessibilityLabel = "Filtre IA : choisit le filtre selon la scène"
-        smart.thumb.image = UIImage(systemName: "sparkles")
-        smart.thumb.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
-        smart.thumb.contentMode = .center
-        smart.thumb.tintColor = Palette.accent
-        smart.addTarget(self, action: #selector(onAIFilter), for: .touchUpInside)
-        filterStrip.addArrangedSubview(smart)
-
         for (i, filter) in FILTERS.enumerated() {
             let chip = FilterChip(title: filter.name)
             chip.accessibilityLabel = "Filtre \(filter.name)"
@@ -544,7 +530,7 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
     }
 
     @objc private func onBlur() {
-        blurMode = BlurMode(rawValue: (blurMode.rawValue + 1) % 4) ?? .off
+        blurMode = BlurMode(rawValue: (blurMode.rawValue + 1) % 3) ?? .off
         UIView.animate(withDuration: 0.2) {
             self.updateBlurUi()
             self.view.layoutIfNeeded()
@@ -552,7 +538,6 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
         switch blurMode {
         case .radial: announce("Flou rond", "Touche l’image : zone nette", hold: 2.2)
         case .band: announce("Flou bande", "Touche l’image : zone nette", hold: 2.2)
-        case .ai: announce("Flou IA", "Sujet net, fond flou", hold: 2.2)
         case .off: break
         }
         savePrefs()
@@ -575,30 +560,6 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
 
     @objc private func chipTapped(_ chip: FilterChip) {
         selectFilter(chip.tag)
-    }
-
-    /// Filtre IA : l'IA du téléphone reconnaît la scène et choisit le filtre.
-    @objc private func onAIFilter() {
-        frameLock.lock()
-        let frame = latestFrame
-        frameLock.unlock()
-        guard let frame, !aiBusy else {
-            if frame == nil { toast("La caméra n’est pas encore prête.") }
-            return
-        }
-        aiBusy = true
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        let k = 512 / max(frame.extent.width, frame.extent.height)
-        let small = frame.transformed(by: CGAffineTransform(scaleX: k, y: k))
-        aiQueue.async { [weak self] in
-            let guess = SceneAI.guess(small, context: Renderer.shared.context)
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.aiBusy = false
-                self.selectFilter(guess.filterIndex, announce: false)
-                self.announce(FILTERS[guess.filterIndex].name, "IA · " + guess.title.uppercased(), hold: 1.6)
-            }
-        }
     }
 
     @objc private func pickRandomFilter() {
@@ -677,9 +638,8 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
     }
 
     private func updateBlurUi() {
-        let titles = ["Flou", "Flou rond", "Flou bande", "Flou IA"]
-        blurButton.set(symbol: blurMode == .ai ? "sparkles" : "scope", title: titles[blurMode.rawValue])
-        if blurMode != .ai { subjects.clear() }
+        let titles = ["Flou", "Flou rond", "Flou bande"]
+        blurButton.set(symbol: "scope", title: titles[blurMode.rawValue])
         blurButton.isOn = blurMode != .off
         blurRow.isHidden = blurMode == .off
         blurRow.alpha = blurMode == .off ? 0 : 1
@@ -818,23 +778,12 @@ final class CameraViewController: UIViewController, UIGestureRecognizerDelegate 
         image = image.cropped(to: CGRect(x: dx, y: dy, width: size.width, height: size.height))
             .transformed(by: CGAffineTransform(translationX: -dx, y: -dy))
 
-        frameLock.lock()
-        latestFrame = base
-        frameLock.unlock()
-
         let now = CACurrentMediaTime()
         if now - grainTime >= 0.08 {
             grainTime = now
             grainOffset = CGPoint(x: CGFloat.random(in: 0..<1), y: CGFloat.random(in: 0..<1))
         }
-        var settings = shared.get()
-        if settings.blur == .ai {
-            // L'IA détoure le sujet sur une petite image, en parallèle ; on applique le dernier masque connu.
-            let k = 640 / max(base.extent.width, base.extent.height)
-            subjects.submit(base.transformed(by: CGAffineTransform(scaleX: k, y: k)))
-            settings.subjectMask = subjects.latest()
-        }
-        Renderer.shared.draw(Look.render(image, settings, grainOffset: grainOffset), in: metalLayer)
+        Renderer.shared.draw(Look.render(image, shared.get(), grainOffset: grainOffset), in: metalLayer)
 
         // Toutes les 2 s, les vignettes de filtres reprennent l'image de la caméra.
         if now - thumbTime >= 2 {

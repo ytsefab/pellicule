@@ -6,8 +6,6 @@ enum BlurMode: Int {
     case off = 0
     case radial = 1
     case band = 2
-    /// Sujet net, fond flou : le sujet est détouré par l'IA du téléphone.
-    case ai = 3
 }
 
 /// Tout ce qui définit le rendu d'une image : partagé entre l'aperçu en direct et la photo finale.
@@ -23,8 +21,6 @@ struct LookSettings {
     var spread: CGFloat = 1
     /// Format de l'image : largeur / hauteur en portrait (0,75 pour 4:3).
     var aspect: CGFloat = 0.75
-    /// Masque du sujet (blanc = sujet) pour le flou IA ; nil = pas de sujet trouvé.
-    var subjectMask: CIImage?
 }
 
 /// Formats d'image. `ratio` = largeur / hauteur en portrait ; nil = plein écran (format de l'écran).
@@ -99,13 +95,6 @@ enum Look {
      progressivement plus douce en s'en éloignant (flou léger, puis flou plus marqué).
      */
     private static func blur(_ img: CIImage, _ s: LookSettings, _ e: CGRect) -> CIImage {
-        if s.blur == .ai {
-            if let mask = s.subjectMask { return portrait(img, s, e, mask) }
-            // Pas de sujet détecté : flou rond autour du point touché.
-            var round = s
-            round.blur = .radial
-            return blur(img, round, e)
-        }
         let short = min(e.width, e.height)
         let sigma = strongSigma(s.blurIntensity) * short
         let light = gaussian(img, sigma: sigma * 0.38, e)
@@ -115,21 +104,6 @@ enum Look {
         var out = blend(light, over: img, mask: mask(s, e, stops[0] * k, stops[1] * k))
         out = blend(strong, over: out, mask: mask(s, e, stops[1] * k, stops[2] * k))
         return out
-    }
-
-    /// Flou IA : le sujet détouré reste net, tout le reste est flou, avec un bord adouci.
-    private static func portrait(_ img: CIImage, _ s: LookSettings, _ e: CGRect, _ mask: CIImage) -> CIImage {
-        let short = min(e.width, e.height)
-        let m = mask.extent
-        let fitted = mask.transformed(by: CGAffineTransform(translationX: -m.minX, y: -m.minY)
-            .concatenating(CGAffineTransform(scaleX: e.width / m.width, y: e.height / m.height))
-            .concatenating(CGAffineTransform(translationX: e.minX, y: e.minY)))
-        let soft = fitted.clampedToExtent().applyingGaussianBlur(sigma: Double(max(0.5, 0.004 * short))).cropped(to: e)
-        let background = gaussian(img, sigma: strongSigma(s.blurIntensity) * short * 1.25, e)
-        return img.applyingFilter("CIBlendWithRedMask", parameters: [
-            kCIInputBackgroundImageKey: background,
-            kCIInputMaskImageKey: soft,
-        ])
     }
 
     private static func gaussian(_ img: CIImage, sigma: CGFloat, _ e: CGRect) -> CIImage {

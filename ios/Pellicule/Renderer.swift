@@ -53,11 +53,6 @@ final class Renderer {
     func renderPhoto(_ data: Data, _ settings: LookSettings, orientation: CGImagePropertyOrientation) -> (jpeg: Data, thumb: CGImage?)? {
         guard let source = CIImage(data: data, options: [.applyOrientationProperty: true]) else { return nil }
         var image = Look.crop(source, aspect: settings.aspect)
-        var settings = settings
-        if settings.blur == .ai {
-            // Détourage en qualité maximale pour la photo (l'aperçu utilise un modèle plus rapide).
-            settings.subjectMask = SubjectMask.compute(for: image, accurate: true)
-        }
         image = Look.render(image, settings, grainOffset: CGPoint(x: CGFloat.random(in: 0..<1), y: CGFloat.random(in: 0..<1)))
         image = image.oriented(orientation)
         image = image.transformed(by: CGAffineTransform(translationX: -image.extent.minX, y: -image.extent.minY))
